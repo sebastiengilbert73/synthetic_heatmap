@@ -51,7 +51,9 @@ def main(
 
     # Neural network loading
     neural_network = None
-    if architecture == 'FConv_4k5_16_32_64_128':
+    if architecture == 'FConv_3k5_32_64_128':
+        neural_network = architectures.FConv_3k5(number_of_channels=(32, 64, 128))
+    elif architecture == 'FConv_4k5_16_32_64_128':
         neural_network = architectures.FConv_4k5(number_of_channels=(16, 32, 64, 128))
     elif architecture == 'FConv_4k5_32_64_128_256':
         neural_network = architectures.FConv_4k5(number_of_channels=(32, 64, 128, 256))
