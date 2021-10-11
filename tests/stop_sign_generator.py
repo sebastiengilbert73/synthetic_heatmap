@@ -14,8 +14,8 @@ def main():
         os.makedirs(output_directory)
 
     stop_sign_generator = StopSign()
-    for imgNdx in range(20):
-        input_img, heatmap_img = stop_sign_generator.Generate(image_sizeHW)
+    for imgNdx in range(160):
+        input_img, heatmap_img = stop_sign_generator.Generate(image_sizeHW, maximum_number_of_trials=10)
         input_img_filepath = os.path.join(output_directory, "stopSignGenerator_main_input{}.png".format(imgNdx))
         cv2.imwrite(input_img_filepath, input_img)
         heatmap_img_filepath = os.path.join(output_directory, "stopSignGenerator_main_heatmap{}.png".format(imgNdx))
