@@ -25,7 +25,7 @@ class FConv_3k5(torch.nn.Module):
         self.conv_transp3 = torch.nn.ConvTranspose2d(self.number_of_channels[0], 1,
                                                      kernel_size=5, stride=2, padding=2,
                                                      output_padding=1)
-        self.apply(init_weights)
+        #self.apply(init_weights)
 
     def forward(self, input_tsr):  # input_tsr.shape = (N, 1, 256, 256)
         activation1 = F.relu(self.maxpool2d(self.conv1(input_tsr)))  # (N, C1, 128, 128)

@@ -67,7 +67,7 @@ class DynamicImageHeatmaps(Dataset):  # For training, we'll generate the data on
         return self.number_of_samples
 
     def __getitem__(self, idx):
-        (input_image, heatmap) = self.generator.Generate(self.image_sizeHW)
+        (input_image, heatmap, result_msg) = self.generator.Generate(self.image_sizeHW)
         input_tsr = torch.from_numpy(input_image).unsqueeze(0)/256.0  # (1, 256, 256)
         heatmap_tsr = torch.from_numpy(heatmap).unsqueeze(0)/256.0  # (1, 256, 256)
         return (input_tsr, heatmap_tsr)
