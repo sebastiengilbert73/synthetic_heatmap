@@ -20,7 +20,9 @@ def main(
 
     stop_sign_generator = StopSign()
     for imgNdx in range(numberOfImages):
-        input_img, heatmap_img, result_msg = stop_sign_generator.Generate(image_sizeHW, maximum_number_of_trials=10)
+        input_img, heatmap_img, result_msg = stop_sign_generator.Generate(image_sizeHW,
+                                                                          maximum_number_of_trials=10,
+                                                                          debug_directory=None)
         if displayResultMsg:
             logging.info(result_msg)
         input_img_filepath = os.path.join(output_directory, "stopSignGenerator_main_input{}.png".format(imgNdx))
