@@ -4,6 +4,7 @@ import numpy as np
 import random
 import math
 import urllib.request
+import os
 
 class StopSign(Generator):
     def __init__(self, octogon_diameter_range=(1.3, 1.3),
@@ -27,15 +28,15 @@ class StopSign(Generator):
         #self.background_source_url = "https://picsum.photos"
 
 
-    def Generate(self, image_sizeHW, maximum_number_of_trials=1000):
-        #input_image = np.zeros(image_sizeHW, dtype=np.uint8)
+    def Generate(self, image_sizeHW, maximum_number_of_trials=1000, debug_directory=None,
+                 apply_laplacian=False, background_image=None):
         heatmap = np.zeros(image_sizeHW, dtype=np.uint8)
         dilation_kernel = np.ones((3, 3), dtype=np.uint8)
-        #blurring_size = 3
 
-
-        color_img, result_msg = DownloadRandomImage(image_sizeHW=image_sizeHW)
-        input_image = cv2.cvtColor(color_img, cv2.COLOR_BGR2GRAY)
+        input_image = background_image
+        if background_image is None:
+            color_img, result_msg = DownloadRandomImage(image_sizeHW=image_sizeHW)
+            input_image = cv2.cvtColor(color_img, cv2.COLOR_BGR2GRAY)
 
         # Write a random 'STOP'
         random_stop_img = np.zeros(image_sizeHW, dtype=np.uint8)
@@ -64,16 +65,19 @@ class StopSign(Generator):
             input_image = cv2.flip(input_image, 1)
 
         # Compute the histogram
-        histogram = cv2.calcHist([input_image], [0], None, [32], [0, 256])
+        """histogram = cv2.calcHist([input_image], [0], None, [32], [0, 256])
         histogram = [h[0] for h in histogram]
         #print ("Generate(): histogram = {}; len(histogram) = {}".format(histogram, len(histogram)))
         peak_gray_level = 4 + 8 * HistogramPeak(histogram)
+        """
 
         # Write 'STOP'
         text_is_within_limits = False
         trialNdx = 1
         text_bounding_boxYXHW = None
-        text_gray_level = peak_gray_level
+        text_gray_level = np.mean(input_image) + 25 + round(25 * random.random())
+        if text_gray_level > 255:
+            text_gray_level = 255
         stop_sign_img = np.zeros(image_sizeHW, dtype=np.uint8)
         while not text_is_within_limits and trialNdx <= maximum_number_of_trials:
             center = (round(image_sizeHW[1] * random.random()), round(image_sizeHW[0] * random.random()))
@@ -92,7 +96,8 @@ class StopSign(Generator):
             affine_transformation_mtx[1, 1] = alpha
             affine_transformation_mtx[1, 2] = H / 2 * (1 - alpha)
             stop_sign_img = cv2.warpAffine(stop_sign_img, affine_transformation_mtx, image_sizeHW)
-
+            # Dilate
+            stop_sign_img = cv2.dilate(stop_sign_img, np.ones((3, 3), dtype=np.uint8))
             # Find the bounding box around the text
             non_zero_points = np.transpose(np.nonzero(stop_sign_img))
             text_bounding_boxYXHW = cv2.boundingRect(np.array(non_zero_points))
@@ -102,8 +107,6 @@ class StopSign(Generator):
             else:  # The text touches the limit
                 text_is_within_limits = False
                 stop_sign_img = np.zeros(image_sizeHW, dtype=np.uint8)
-
-
 
             trialNdx += 1
 
@@ -115,8 +118,12 @@ class StopSign(Generator):
         vertices_arr = vertices_arr.astype(int)
         inner_vertices_arr = RegularPolygonVertices(octagon_center, 0.85 * diameter, 8)
         #inner_vertices_arr = inner_vertices_arr.astype(int)
-        octagon_graylevel = peak_gray_level # self.RandomValueInRange('graylevel_range')
+        octagon_graylevel = text_gray_level
+        stop_text_img = stop_sign_img.copy()
+        cv2.fillPoly(stop_sign_img, vertices_arr, octagon_graylevel//2)
         cv2.polylines(stop_sign_img, vertices_arr, True, octagon_graylevel, thickness=3)
+        # Re-write the text
+        stop_sign_img = cv2.max(stop_sign_img, stop_text_img)
 
         # Add noise
         stop_sign_img += (self.parameters_dict['noise_amplitude'] * np.random.random(stop_sign_img.shape)).astype(np.uint8)
@@ -126,6 +133,7 @@ class StopSign(Generator):
 
         # Erase the input image in the octagon, such that the stop sign is on the foreground
         cv2.fillPoly(input_image, vertices_arr, 0)
+
 
         input_image = cv2.max(input_image, stop_sign_img)
 
@@ -145,10 +153,23 @@ class StopSign(Generator):
 
         affine_transformed_vertices = WarpAffinePoints(vertices_arr, affine_transformation_mtx)
         cv2.fillPoly(heatmap, affine_transformed_vertices, 255)
+        # Check if the heatmap is non-empty
+        number_of_non_zero_pixels = cv2.countNonZero(heatmap)
+        if diameter > 0:
+            circle_filling_ratio = number_of_non_zero_pixels / (math.pi * (diameter/2)**2)
+        else:
+            circle_filling_ratio = 0
+        #print ("number_of_non_zero_pixels = {}; circle_filling_ratio = {}".format(number_of_non_zero_pixels, circle_filling_ratio))
+        if circle_filling_ratio < 0.5:
+            # The stop sign is not visible enough. Start again
+            return self.Generate(image_sizeHW, maximum_number_of_trials, debug_directory)
 
-        # Compute the edges of the input image
-        input_image = cv2.Laplacian(input_image, ddepth=cv2.CV_8U)
-        #input_image = cv2.blur(input_image, (blurring_size, blurring_size))
+        if debug_directory is not None:
+            input_image_before_laplacian_filepath = os.path.join(debug_directory, "stopSign_Generate_beforeLaplacian.png")
+            cv2.imwrite(input_image_before_laplacian_filepath, input_image)
+        if apply_laplacian:
+            # Compute the edges of the input image
+            input_image = cv2.Laplacian(input_image, ddepth=cv2.CV_8U)
 
         return (input_image, heatmap, result_msg)
 
