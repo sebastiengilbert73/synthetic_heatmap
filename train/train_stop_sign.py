@@ -7,6 +7,7 @@ import cv2
 import synthetic_heatmap.generators.stop_sign as stop_sign_gen
 import architectures
 import ast
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('validationImagesDirectory', help="The directory that contains the validation images and their corresponding heatmaps")
@@ -67,7 +68,18 @@ class DynamicImageHeatmaps(Dataset):  # For training, we'll generate the data on
         return self.number_of_samples
 
     def __getitem__(self, idx):
-        (input_image, heatmap, result_msg) = self.generator.Generate(self.image_sizeHW)
+        maximum_number_of_trials = 20
+        generation_succeeded = False
+        trialNdx = 1
+        while not generation_succeeded and trialNdx < maximum_number_of_trials:
+            try:
+                (input_image, heatmap, result_msg) = self.generator.Generate(self.image_sizeHW)
+                generation_succeeded = True
+            except:
+                logging.warning("DynamicImageHeatmaps.__getitem__(): Generation failed.")
+                time.sleep(5.0)
+                trialNdx += 1
+
         input_tsr = torch.from_numpy(input_image).unsqueeze(0)/256.0  # (1, 256, 256)
         heatmap_tsr = torch.from_numpy(heatmap).unsqueeze(0)/256.0  # (1, 256, 256)
         return (input_tsr, heatmap_tsr)
