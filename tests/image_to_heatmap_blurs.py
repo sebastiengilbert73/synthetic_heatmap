@@ -18,7 +18,7 @@ def main(
         blurring_sizes,
         targetHeatmapFilepath
     ):
-    logging.info("image_to_heatmap.py main(); device = {}".format(device))
+    logging.info("image_to_heatmap_blurs.py main(); device = {}".format(device))
 
     if not os.path.exists(outputDirectory):
         os.makedirs(outputDirectory)
@@ -74,7 +74,7 @@ def main(
 
     # Convert to an image
     output_img = (256 * output_tsr).squeeze().detach().numpy()
-    output_img_filepath = os.path.join(outputDirectory, "imageToHeatmap_main_output.png")
+    output_img_filepath = os.path.join(outputDirectory, "imageToHeatmapBlurs_main_output.png")
     cv2.imwrite(output_img_filepath, output_img)
 
     # Resize to the original image
@@ -82,7 +82,7 @@ def main(
     if output_heatmap.shape != original_img.shape:
         logging.info("Resizing to {}".format(original_img.shape))
         output_heatmap = cv2.resize(output_heatmap, (original_img.shape[1], original_img.shape[0]))
-    output_heatmap_filepath = os.path.join(outputDirectory, "imageToHeatmap_main_heatmap.png")
+    output_heatmap_filepath = os.path.join(outputDirectory, "imageToHeatmapBlurs_main_heatmap.png")
     cv2.imwrite(output_heatmap_filepath, output_heatmap)
 
     if targetHeatmapFilepath is not None:
@@ -94,6 +94,14 @@ def main(
         loss = lossFcn(output_tsr, target_output_tsr)
         logging.info("main(): loss = {}".format(loss))
 
+    # Encode the heatmap in the red channel
+    color_encoded_img = cv2.cvtColor(original_img, cv2.COLOR_GRAY2BGR)
+    logging.debug("color_encoded_img.shape = {}; output_heatmap.shape = {}".format(color_encoded_img.shape, output_heatmap.shape))
+    color_encoded_img[:, :, 2] = output_heatmap
+    color_encoded_img_filepath = os.path.join(outputDirectory, "imageToHeatmapBlurs_main_colorEncoded.png")
+    cv2.imwrite(color_encoded_img_filepath, color_encoded_img)
+
+    return color_encoded_img
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
