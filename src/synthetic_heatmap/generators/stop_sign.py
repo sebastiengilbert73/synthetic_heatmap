@@ -29,14 +29,17 @@ class StopSign(Generator):
 
 
     def Generate(self, image_sizeHW, maximum_number_of_trials=1000, debug_directory=None,
-                 apply_laplacian=False, background_image=None):
+                 apply_laplacian=False, background_image=None, word='STOP'):
         heatmap = np.zeros(image_sizeHW, dtype=np.uint8)
         dilation_kernel = np.ones((3, 3), dtype=np.uint8)
 
         input_image = background_image
+        result_msg = None
         if background_image is None:
             color_img, result_msg = DownloadRandomImage(image_sizeHW=image_sizeHW)
             input_image = cv2.cvtColor(color_img, cv2.COLOR_BGR2GRAY)
+        if input_image.shape != image_sizeHW:
+            input_image = cv2.resize(input_image, image_sizeHW)
 
         # Write a random 'STOP'
         random_stop_img = np.zeros(image_sizeHW, dtype=np.uint8)
@@ -45,7 +48,7 @@ class StopSign(Generator):
         font_scale = self.RandomValueInRange('font_scale_range')
         text_gray_level = self.RandomValueInRange('graylevel_range')
         text_origin = (round(random_stop_center[0]), round(random_stop_center[1]))
-        cv2.putText(random_stop_img, 'STOP', text_origin, font_type, font_scale, text_gray_level)
+        cv2.putText(random_stop_img, word, text_origin, font_type, font_scale, text_gray_level)
         random_stop_img = cv2.dilate(random_stop_img, dilation_kernel)
 
         input_image = cv2.max(input_image, random_stop_img)
@@ -85,7 +88,7 @@ class StopSign(Generator):
             font_scale = self.RandomValueInRange('font_scale_range')
             #text_gray_level = self.RandomValueInRange('graylevel_range')
             text_origin = (round(center[0]), round(center[1]))
-            cv2.putText(stop_sign_img, 'STOP', text_origin, font_type, font_scale, text_gray_level)
+            cv2.putText(stop_sign_img, word, text_origin, font_type, font_scale, text_gray_level)
             #input_image = cv2.dilate(input_image, dilation_kernel)
 
             # Stretch the text vertically by 1.5 x
@@ -163,7 +166,8 @@ class StopSign(Generator):
         #print ("number_of_non_zero_pixels = {}; circle_filling_ratio = {}".format(number_of_non_zero_pixels, circle_filling_ratio))
         if circle_filling_ratio < 0.5:
             # The stop sign is not visible enough. Start again
-            return self.Generate(image_sizeHW, maximum_number_of_trials, debug_directory)
+            return self.Generate(image_sizeHW, maximum_number_of_trials, debug_directory,
+                                 apply_laplacian, background_image, word)
 
         if debug_directory is not None:
             input_image_before_laplacian_filepath = os.path.join(debug_directory, "stopSign_Generate_beforeLaplacian.png")
