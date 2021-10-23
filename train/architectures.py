@@ -39,6 +39,43 @@ class FConv_3k5(torch.nn.Module):
         output = torch.sigmoid(activation6)
         return output
 
+class FConv_3k5_max(torch.nn.Module):
+    def __init__(self, number_of_channels=(16, 32, 64), dropout_ratio=0.5):
+        super(FConv_3k5_max, self).__init__()
+        self.number_of_channels = number_of_channels
+        self.conv1 = torch.nn.Conv2d(1, self.number_of_channels[0], kernel_size=5, padding=2)
+        self.conv2 = torch.nn.Conv2d(self.number_of_channels[0], self.number_of_channels[1], kernel_size=5, padding=2)
+        self.conv3 = torch.nn.Conv2d(self.number_of_channels[1], self.number_of_channels[2], kernel_size=5, padding=2)
+        self.dropout2d = torch.nn.Dropout2d(p=dropout_ratio)
+        self.maxpool2d = torch.nn.MaxPool2d(kernel_size=2)
+        self.conv_transp1 = torch.nn.ConvTranspose2d(self.number_of_channels[2], self.number_of_channels[1],
+                                                     kernel_size=5, stride=2, padding=2,
+                                                     output_padding=1)
+        self.conv_transp2 = torch.nn.ConvTranspose2d(self.number_of_channels[1], self.number_of_channels[0],
+                                                     kernel_size=5, stride=2, padding=2,
+                                                     output_padding=1)
+        self.conv_transp3 = torch.nn.ConvTranspose2d(self.number_of_channels[0], 1,
+                                                     kernel_size=5, stride=2, padding=2,
+                                                     output_padding=1)
+
+    def forward(self, input_tsr_list):  # input_tsr.shape = (N, 1, 256, 256)
+        output_tsr_list = []
+        for input_tsr in input_tsr_list:
+            activation1 = F.relu(self.maxpool2d(self.conv1(input_tsr)))  # (N, C1, 128, 128)
+            activation2 = F.relu(self.maxpool2d(self.conv2(activation1)))  # (N, C2, 64, 64)
+            activation2 = self.dropout2d(activation2)
+            activation3 = F.relu(self.maxpool2d(self.conv3(activation2)))  # (N, C3, 32, 32)
+            activation4 = F.relu(self.conv_transp1(activation3))  # (N, C2, 64, 64)
+            activation5 = F.relu(self.conv_transp2(activation4))  # (N, C1, 128, 128)
+            activation5 = self.dropout2d(activation5)
+            activation6 = self.conv_transp3(activation5)  # (N, 1, 256, 256)
+            output = torch.sigmoid(activation6)
+            output_tsr_list.append(output)
+        final_output_tsr = output_tsr_list[0]
+        for additional_output_tsr_ndx in range(1, len(output_tsr_list)):
+            final_output_tsr = torch.maximum(final_output_tsr, output_tsr_list[additional_output_tsr_ndx])
+        return final_output_tsr
+
 class FConv_4k5(torch.nn.Module):
     def __init__(self, number_of_channels=(16, 32, 64, 128), dropout_ratio=0.5):
         super(FConv_4k5, self).__init__()
