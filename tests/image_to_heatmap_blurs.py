@@ -44,7 +44,7 @@ def main(
         # Conversion to a tensor
         input_tsr = torch.from_numpy(input_img).unsqueeze(0)/256.0  # [1, 256, 256]
         input_tsr = input_tsr.to(device)
-        input_tsrs.append(input_tsr)
+        input_tsrs.append(input_tsr.unsqueeze(0))
 
     # Neural network loading
     neural_network = None
@@ -58,6 +58,8 @@ def main(
         neural_network = architectures.FConv_4k5(number_of_channels=(64, 128, 256, 512))
     elif architecture == 'FConv_5k5_16_32_64_128_256':
         neural_network = architectures.FConv_5k5(number_of_channels=(16, 32, 64, 128, 256))
+    elif architecture == 'FConv_3k5_max_32_64_128':
+        neural_network = architectures.FConv_3k5_max(number_of_channels=(32, 64, 128))
     else:
         raise NotImplementedError("main(): Not implemented architecture '{}'".format(architecture))
     neural_network.load_state_dict(torch.load(neuralNetworkFilepath, map_location=torch.device(device)))
@@ -87,7 +89,7 @@ def main(
         target_heatmap = cv2.imread(targetHeatmapFilepath, cv2.IMREAD_GRAYSCALE)
         target_heatmap_tsr = torch.from_numpy(target_heatmap).unsqueeze(0)/256.0
         target_heatmap_tsr = target_heatmap_tsr.to(device)
-        target_output_tsr = neural_network(target_heatmap_tsr.unsqueeze(0))
+        target_output_tsr = target_heatmap_tsr.unsqueeze(0)
         lossFcn = torch.nn.BCELoss()
         loss = lossFcn(output_tsr, target_output_tsr.detach())
         logging.info("main(): loss = {}".format(loss))
