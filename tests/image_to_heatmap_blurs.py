@@ -91,7 +91,7 @@ def main(
         target_heatmap_tsr = target_heatmap_tsr.to(device)
         target_output_tsr = target_heatmap_tsr.unsqueeze(0)
         lossFcn = torch.nn.BCELoss()
-        loss = lossFcn(output_tsr, target_output_tsr.detach())
+        loss = lossFcn(output_tsr, target_output_tsr)
         logging.info("main(): loss = {}".format(loss))
 
 
