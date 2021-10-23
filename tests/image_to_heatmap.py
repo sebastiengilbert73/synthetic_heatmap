@@ -85,11 +85,11 @@ def main(
 
     if targetHeatmapFilepath is not None:
         target_heatmap = cv2.imread(targetHeatmapFilepath, cv2.IMREAD_GRAYSCALE)
-        target_heatmap_tsr = torch.from_numpy(target_heatmap).unsqueeze(0)/256.0
+        target_heatmap_tsr = torch.from_numpy(target_heatmap).unsqueeze(0)/256.0  # (1, 256, 256)
+        target_heatmap_tsr = target_heatmap_tsr.unsqueeze(0)  # (1, 1, 256, 256)
         target_heatmap_tsr = target_heatmap_tsr.to(device)
-        target_output_tsr = neural_network(target_heatmap_tsr.unsqueeze(0))
         lossFcn = torch.nn.BCELoss()
-        loss = lossFcn(output_tsr, target_output_tsr.detach())
+        loss = lossFcn(output_tsr, target_heatmap_tsr)
         logging.info("main(): loss = {}".format(loss))
 
 
