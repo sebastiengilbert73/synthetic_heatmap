@@ -56,8 +56,8 @@ class StopSign(Generator):
         random_octagon_vertices_arr = RegularPolygonVertices(random_octagon_center, random_octagon_diameter, 8)
         random_octagon_vertices_arr = random_octagon_vertices_arr.astype(int)
         random_octagon_octagon_graylevel = self.RandomValueInRange('graylevel_range')
-        cv2.polylines(input_image, random_octagon_vertices_arr, True, random_octagon_octagon_graylevel)
-
+        #cv2.polylines(input_image, random_octagon_vertices_arr, True, random_octagon_octagon_graylevel)
+        cv2.fillPoly(input_image, random_octagon_vertices_arr, random_octagon_octagon_graylevel)
         # Reflections
         if random.random() > 0.5:
             input_image = cv2.flip(input_image, 0)
@@ -129,7 +129,8 @@ class StopSign(Generator):
         stop_sign_img += (self.parameters_dict['noise_amplitude'] * np.random.random(stop_sign_img.shape)).astype(np.uint8)
 
         # Blur the stop sign, such that its edges are not too sharp
-        stop_sign_img = cv2.blur(stop_sign_img, (3, 3))
+        if random.random() > 0.5:
+            stop_sign_img = cv2.blur(stop_sign_img, (3, 3))
 
         # Erase the input image in the octagon, such that the stop sign is on the foreground
         cv2.fillPoly(input_image, vertices_arr, 0)
