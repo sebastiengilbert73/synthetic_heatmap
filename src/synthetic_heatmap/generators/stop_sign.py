@@ -82,36 +82,39 @@ class StopSign(Generator):
         if text_gray_level > 255:
             text_gray_level = 255
         stop_sign_img = np.zeros(image_sizeHW, dtype=np.uint8)
-        while not text_is_within_limits and trialNdx <= maximum_number_of_trials:
-            center = (round(image_sizeHW[1] * random.random()), round(image_sizeHW[0] * random.random()))
-            font_type = random.choice(self.font_types)
-            font_scale = self.RandomValueInRange('font_scale_range')
-            #text_gray_level = self.RandomValueInRange('graylevel_range')
-            text_origin = (round(center[0]), round(center[1]))
-            cv2.putText(stop_sign_img, word, text_origin, font_type, font_scale, text_gray_level)
-            #input_image = cv2.dilate(input_image, dilation_kernel)
+        if len(word) > 0:
+            while not text_is_within_limits and trialNdx <= maximum_number_of_trials:
+                center = (round(image_sizeHW[1] * random.random()), round(image_sizeHW[0] * random.random()))
+                font_type = random.choice(self.font_types)
+                font_scale = self.RandomValueInRange('font_scale_range')
+                #text_gray_level = self.RandomValueInRange('graylevel_range')
+                text_origin = (round(center[0]), round(center[1]))
+                cv2.putText(stop_sign_img, word, text_origin, font_type, font_scale, text_gray_level)
+                #input_image = cv2.dilate(input_image, dilation_kernel)
 
-            # Stretch the text vertically by 1.5 x
-            H = image_sizeHW[0]
-            alpha = 1.5
-            affine_transformation_mtx = np.zeros((2, 3), dtype=float)
-            affine_transformation_mtx[0, 0] = 1.0
-            affine_transformation_mtx[1, 1] = alpha
-            affine_transformation_mtx[1, 2] = H / 2 * (1 - alpha)
-            stop_sign_img = cv2.warpAffine(stop_sign_img, affine_transformation_mtx, image_sizeHW)
-            # Dilate
-            stop_sign_img = cv2.dilate(stop_sign_img, np.ones((3, 3), dtype=np.uint8))
-            # Find the bounding box around the text
-            non_zero_points = np.transpose(np.nonzero(stop_sign_img))
-            text_bounding_boxYXHW = cv2.boundingRect(np.array(non_zero_points))
-            if text_bounding_boxYXHW[0] + text_bounding_boxYXHW[2] < image_sizeHW[0] - 8 and \
-                    text_bounding_boxYXHW[1] + text_bounding_boxYXHW[3] < image_sizeHW[1] - 8:
-                text_is_within_limits = True
-            else:  # The text touches the limit
-                text_is_within_limits = False
-                stop_sign_img = np.zeros(image_sizeHW, dtype=np.uint8)
+                # Stretch the text vertically by 1.5 x
+                H = image_sizeHW[0]
+                alpha = 1.5
+                affine_transformation_mtx = np.zeros((2, 3), dtype=float)
+                affine_transformation_mtx[0, 0] = 1.0
+                affine_transformation_mtx[1, 1] = alpha
+                affine_transformation_mtx[1, 2] = H / 2 * (1 - alpha)
+                stop_sign_img = cv2.warpAffine(stop_sign_img, affine_transformation_mtx, image_sizeHW)
+                # Dilate
+                stop_sign_img = cv2.dilate(stop_sign_img, np.ones((3, 3), dtype=np.uint8))
+                # Find the bounding box around the text
+                non_zero_points = np.transpose(np.nonzero(stop_sign_img))
+                text_bounding_boxYXHW = cv2.boundingRect(np.array(non_zero_points))
+                if text_bounding_boxYXHW[0] + text_bounding_boxYXHW[2] < image_sizeHW[0] - 8 and \
+                        text_bounding_boxYXHW[1] + text_bounding_boxYXHW[3] < image_sizeHW[1] - 8:
+                    text_is_within_limits = True
+                else:  # The text touches the limit
+                    text_is_within_limits = False
+                    stop_sign_img = np.zeros(image_sizeHW, dtype=np.uint8)
 
-            trialNdx += 1
+                trialNdx += 1
+        else:  # word is ""
+            text_bounding_boxYXHW = [stop_sign_img.shape[0]//2, stop_sign_img.shape[1]//2, stop_sign_img.shape[0]//6, stop_sign_img.shape[1]//6]
 
         diameter = self.RandomValueInRange('octogon_diameter_range') * math.sqrt(
             text_bounding_boxYXHW[3] ** 2 + text_bounding_boxYXHW[2] ** 2)
