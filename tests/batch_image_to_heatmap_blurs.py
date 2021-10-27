@@ -3,7 +3,6 @@ import argparse
 import torch
 import os
 import cv2
-import architectures
 import ast
 import image_to_heatmap_blurs
 
