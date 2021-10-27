@@ -20,7 +20,7 @@ def main(
     background_img = None
     if backgroundImageFilepath is not None:
         background_img = cv2.imread(backgroundImageFilepath, cv2.IMREAD_GRAYSCALE)
-    print ("background_img = {}".format(background_img))
+
     stop_sign_generator = StopSign()
     input_img, heatmap_img, result_msg = stop_sign_generator.Generate(imageSizeHW,
                                                                       maximum_number_of_trials=10,
