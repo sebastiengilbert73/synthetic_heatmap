@@ -2,8 +2,10 @@ import abc
 import random
 import math
 import numpy as np
-import urllib
+import urllib.request
 import cv2
+import logging
+import os
 
 class Generator(abc.ABC):
     def __init__(self, parameters_dict):
@@ -45,30 +47,27 @@ def DownloadRandomImage(method='picsum', image_sizeHW=(256, 256)):
     if method == 'picsum':
         temp_filepath = "./stock-image.jpg"
         url = "https://picsum.photos"
-        trialNdx = 1
         download_was_successful = False
         image = None
         result_msg = None
-        while trialNdx < 20 and not download_was_successful:
-            (data_file, result_msg) = urllib.request.urlretrieve(
-                url + '/' + str(image_sizeHW[1]) + '/' + str(image_sizeHW[0]),
-                temp_filepath)  # Inspired from https://gist.github.com/jeff-mccarthy/3e04e39014046ffb36e36e001da74449
-            image = cv2.imread(temp_filepath)
+        while not download_was_successful:
+            try:
+                (data_file, result_msg) = urllib.request.urlretrieve(
+                    url + '/' + str(image_sizeHW[1]) + '/' + str(image_sizeHW[0]),
+                    temp_filepath)  # Inspired from https://gist.github.com/jeff-mccarthy/3e04e39014046ffb36e36e001da74449
+                image = cv2.imread(temp_filepath)
 
-            trialNdx = 1
-            download_was_successful = True
-            # Test if the download was successful
-            if image is None:
-                trialNdx += 1
-                download_was_successful = False
-            """try:
-                input_image = cv2.max(image, image)
-            except Exception as ex:
-                trialNdx += 1
-                download_was_successful = False
-            """
-        if trialNdx >= 20:
-            raise ValueError("DownloadRandomImage(): 20 trials to download an image was reached")
+                # Test if the download was successful
+                if image is None:
+                    download_was_successful = False
+                else:
+                    download_was_successful = True
+            except:
+                logging.warning("DownloadRandomImage(): An exception was caught while downloading. Retrying...")
+        # Remove the temporary file
+        if os.path.exists(temp_filepath):
+            os.remove(temp_filepath)
+
         return image, result_msg
     else:
         raise NotImplementedError("DownloadRandomImage(): Not implemented method '{}'".format(method))
