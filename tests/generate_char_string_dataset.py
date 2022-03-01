@@ -23,7 +23,7 @@ def main(
     for imageNdx in range(numberOfImages):
         image, heatmap = generator.Generate(
             image_sizeHW=imageSizeHW,
-            debug_directory=outputDirectory
+            debug_directory=None
         )
         cv2.imwrite(os.path.join(outputDirectory, "image_{}.png".format(imageNdx)), image)
         cv2.imwrite(os.path.join(outputDirectory, "heatmap_{}.png".format(imageNdx)), heatmap)
