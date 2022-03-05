@@ -56,6 +56,11 @@ def main(
                     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                     image = cv2.blur(image, (3, 3))
                     image = np.expand_dims(image, 2)  # (H, H) -> (H, W, 1)
+                elif preprocessing == 'laplacian':
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                    image = cv2.blur(image, (3, 3))
+                    laplacian_img = cv2.Laplacian(image, ddepth=cv2.CV_8U, delta=128)
+                    image = np.expand_dims(laplacian_img, 2)  # (H, H) -> (H, W, 1)
                 else:
                     raise NotImplementedError("live_detection.main(): Not implemented preprocessing '{}'".format(preprocessing))
             # image.shape = (H, W, C)
