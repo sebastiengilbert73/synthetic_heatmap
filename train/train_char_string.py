@@ -32,7 +32,10 @@ class ImageHeatmapDataset(Dataset):
         if input_img.shape != self.image_sizeHW:
             input_img = cv2.resize(input_img, self.image_sizeHW)
         if self.preprocessing is not None:
-            raise NotImplementedError("ImageHeatmapDataset.__getitem__(): Not implemented preprocessing '{}'".format(self.preprocessing))
+            if self.preprocessing == 'laplacian':
+                input_img = cv2.Laplacian(input_img, ddepth=cv2.CV_8U, delta=128)
+            else:
+                raise NotImplementedError("ImageHeatmapDataset.__getitem__(): Not implemented preprocessing '{}'".format(self.preprocessing))
 
         input_img = np.expand_dims(input_img, axis=0)  # (H, W) -> (1, H, W)
 
@@ -73,7 +76,10 @@ class GeneratedImageHeatmapDataset(Dataset):
     def __getitem__(self, idx):
         (input_img, heatmap) = self.generator.Generate(self.image_sizeHW)
         if self.preprocessing is not None:
-            raise NotImplementedError("GeneratedImageHeatmapDataset.__getitem__(): Not implemented preprocessing '{}'".format(self.preprocessing))
+            if self.preprocessing == 'laplacian':
+                input_img = cv2.Laplacian(input_img, ddepth=cv2.CV_8U, delta=128)
+            else:
+                raise NotImplementedError("GeneratedImageHeatmapDataset.__getitem__(): Not implemented preprocessing '{}'".format(self.preprocessing))
         input_img = np.expand_dims(input_img, axis=0)  # (H, W) -> (1, H, W)
         heatmap = np.expand_dims(heatmap, axis=0)  # (H, W) -> (1, H, W)
 
