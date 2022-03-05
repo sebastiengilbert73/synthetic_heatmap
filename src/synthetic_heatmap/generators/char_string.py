@@ -96,7 +96,7 @@ class CharString(Generator):
         # Blur the background image, as the text background must be approximately uniform
         blurring_size = (11, 11)
         blurred_background_img = cv2.blur(grayscale_img, blurring_size)
-        generated_img = np.where(heatmap > 0, blurred_background_img + noise_img, grayscale_img)
+        generated_img = (np.where(heatmap > 0, blurred_background_img + noise_img, grayscale_img)).astype(np.uint8)
 
         blurred_generated_img = cv2.blur(generated_img, (3, 3))
         # Scan the heatmap
