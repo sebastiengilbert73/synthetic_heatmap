@@ -33,6 +33,7 @@ class ImageHeatmapDataset(Dataset):
             input_img = cv2.resize(input_img, self.image_sizeHW)
         if self.preprocessing is not None:
             if self.preprocessing == 'laplacian':
+                input_img = cv2.blur(input_img, (3, 3))
                 input_img = cv2.Laplacian(input_img, ddepth=cv2.CV_8U, delta=128)
             else:
                 raise NotImplementedError("ImageHeatmapDataset.__getitem__(): Not implemented preprocessing '{}'".format(self.preprocessing))
@@ -77,6 +78,7 @@ class GeneratedImageHeatmapDataset(Dataset):
         (input_img, heatmap) = self.generator.Generate(self.image_sizeHW)
         if self.preprocessing is not None:
             if self.preprocessing == 'laplacian':
+                input_img = cv2.blur(input_img, (3, 3))
                 input_img = cv2.Laplacian(input_img, ddepth=cv2.CV_8U, delta=128)
             else:
                 raise NotImplementedError("GeneratedImageHeatmapDataset.__getitem__(): Not implemented preprocessing '{}'".format(self.preprocessing))
@@ -223,7 +225,10 @@ def main(
             if validation_average_loss < lowest_validation_loss:
                 lowest_validation_loss = validation_average_loss
                 champion_filepath = os.path.join(outputDirectory,
-                                                 "{}_ep{}_{:.4f}.pth".format(architecture, epoch, lowest_validation_loss))
+                                                 "{}_".format(architecture))
+                if preprocessing is not None:
+                    champion_filepath += "{}_".format(preprocessing)
+                champion_filepath += "ep{}_{:.4f}.pth".format(epoch, lowest_validation_loss)
                 torch.save(neural_network.state_dict(), champion_filepath)
 
             # Test image
